@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 import {
   LayoutDashboard,
@@ -47,7 +47,7 @@ export default function NavItem({
         "transition-all duration-200 ease-out group relative",
         "text-sm font-medium",
         isActive
-          ? "bg-white/15 text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+          ? "bg-[var(--accent)] text-white shadow-[0_2px_8px_rgba(212,168,67,0.3)]"
           : "text-[var(--text-sidebar)] hover:bg-white/8 hover:text-white",
         isCollapsed && "justify-center px-3"
       )}

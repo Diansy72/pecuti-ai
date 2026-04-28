@@ -46,7 +46,7 @@ export default function Pagination({
   };
 
   return (
-    <div className={cn("flex items-center justify-between", className)}>
+    <div className={cn("flex items-center justify-between mt-6", className)}>
       <p className="text-sm text-[var(--text-secondary)]">
         Menampilkan {startItem} - {endItem} dari {totalItems} data
       </p>

@@ -31,7 +31,7 @@ export default function VehicleTable({
   return (
     <div
       className={cn(
-        "bg-white rounded-[var(--radius-xl)] border border-[var(--border)]",
+        "bg-white border border-[var(--border)] rounded-b-[var(--radius-xl)] rounded-t-none",
         "overflow-hidden",
         className
       )}

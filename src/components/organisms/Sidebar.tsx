@@ -22,7 +22,9 @@ export default function Sidebar({
       className={cn(
         "fixed left-0 top-0 h-screen bg-[var(--primary)] z-40",
         "flex flex-col transition-sidebar",
-        isCollapsed ? "w-[var(--sidebar-collapsed-width)]" : "w-[var(--sidebar-width)]"
+        isCollapsed
+          ? "w-[var(--sidebar-collapsed-width)]"
+          : "w-[var(--sidebar-width)]"
       )}
     >
       {/* Logo Area */}
@@ -33,7 +35,9 @@ export default function Sidebar({
         )}
       >
         <div className="flex-shrink-0 w-10 h-10 bg-[var(--accent)] rounded-full flex items-center justify-center">
-          <span className="text-[var(--primary-dark)] font-bold text-sm">LA</span>
+          <span className="text-[var(--primary-dark)] font-bold text-sm">
+            LA
+          </span>
         </div>
         {!isCollapsed && (
           <div className="min-w-0">
@@ -57,7 +61,8 @@ export default function Sidebar({
             icon={item.icon}
             isActive={
               currentPath === item.href ||
-              (item.href !== "/dashboard" && currentPath.startsWith(item.href))
+              (item.href !== "/dashboard" &&
+                currentPath.startsWith(item.href))
             }
             isCollapsed={isCollapsed}
             hasSubmenu={item.hasSubmenu}
@@ -66,14 +71,15 @@ export default function Sidebar({
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-white/10 p-3 flex justify-center">
         <button
           onClick={onToggle}
           className={cn(
-            "flex items-center gap-3 w-full px-4 py-3 rounded-[var(--radius-lg)]",
+            "flex items-center gap-2 px-4 py-3 rounded-[var(--radius-lg)]",
             "text-[var(--text-sidebar)] hover:bg-white/8 hover:text-white",
             "transition-all duration-200 text-sm font-medium cursor-pointer",
-            isCollapsed && "justify-center px-3"
+            "justify-center w-fit",
+            isCollapsed && "px-3"
           )}
         >
           {isCollapsed ? (

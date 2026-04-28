@@ -113,18 +113,16 @@ export default function PricelistPage() {
           </div>
 
           {/* Table */}
-          <VehicleTable vehicles={paginatedVehicles} className="rounded-t-none border-t-0" />
+          <VehicleTable vehicles={paginatedVehicles} />
 
-          {/* Pagination */}
-          <div className="bg-white rounded-b-[var(--radius-xl)] border border-t-0 border-[var(--border)] px-5 py-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages || 1}
-              totalItems={filteredVehicles.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              onPageChange={setCurrentPage}
-            />
-          </div>
+          <Pagination
+            className="mt-4 px-5"
+            currentPage={currentPage}
+            totalPages={totalPages || 1}
+            totalItems={filteredVehicles.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
 

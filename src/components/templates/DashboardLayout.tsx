@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 import Sidebar from "@/components/organisms/Sidebar";
 import Header from "@/components/organisms/Header";
