@@ -64,6 +64,27 @@ export interface TourPackage {
   status?: "active" | "draft";
 }
 
+export interface TourPackageFormData {
+  title: string;
+  category: string;
+  description: string;
+  destinationTags: string[];
+  includes: string[];
+  excludes: string[];
+  priceType: "per_car" | "per_person";
+  pricingOptions: Array<{
+    id: string;
+    type: "per_car" | "per_person";
+    vehicleName?: string;
+    capacity?: number;
+    price: number;
+  }>;
+  itineraryDays: Array<{
+    day: number;
+    activities: Array<{ time: string; description: string; type: string }>;
+  }>;
+}
+
 // Dashboard
 export interface DashboardStat {
   label: string;
@@ -124,4 +145,21 @@ export interface Customer {
   phone: string;
   totalBookings: number;
   registeredAt: string;
+}
+
+export interface Tourist {
+  id: string;
+  nationality: string;
+  continent: "Asia" | "Europe" | "Americas";
+  packageTaken: string;
+  photoUrl?: string;
+}
+
+export interface GoogleReview {
+  id: string;
+  name: string;
+  country: string;
+  rating: number;
+  comment: string;
+  photoUrl?: string;
 }

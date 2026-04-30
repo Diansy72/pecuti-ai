@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/cn";
-import { Eye, Pencil, Trash2, Car, Bike } from "lucide-react";
+import { Eye, Pencil, Trash2, Car, Bike, CalendarCheck } from "lucide-react";
 import Badge from "@/components/atoms/Badge";
 import IconButton from "@/components/atoms/IconButton";
 import { Vehicle } from "@/types";
@@ -11,11 +11,17 @@ import { formatCurrency } from "@/lib/data";
 interface VehicleTableProps {
   vehicles: Vehicle[];
   className?: string;
+  onView?: (vehicle: Vehicle) => void;
+  onDelete?: (vehicle: Vehicle) => void;
+  onBooking?: (vehicle: Vehicle) => void;
 }
 
 export default function VehicleTable({
   vehicles,
   className,
+  onView,
+  onDelete,
+  onBooking,
 }: VehicleTableProps) {
   const columns = [
     "ID",
@@ -107,7 +113,18 @@ export default function VehicleTable({
 
                 {/* Status */}
                 <td className="px-5 py-4">
-                  <Badge status={vehicle.status === "rented" ? "booked" : vehicle.status} />
+                  <div className="flex items-center gap-2">
+                    <Badge status={vehicle.status === "rented" ? "booked" : vehicle.status} />
+                    {vehicle.status === "available" && onBooking && (
+                      <button
+                        onClick={() => onBooking(vehicle)}
+                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors cursor-pointer"
+                        title="Create Booking"
+                      >
+                        <CalendarCheck size={14} />
+                      </button>
+                    )}
+                  </div>
                 </td>
 
                 {/* Actions */}
@@ -117,6 +134,7 @@ export default function VehicleTable({
                       variant="info"
                       icon={<Eye size={16} />}
                       tooltip="View details"
+                      onClick={() => onView?.(vehicle)}
                     />
                     <IconButton
                       variant="warning"
@@ -127,6 +145,7 @@ export default function VehicleTable({
                       variant="danger"
                       icon={<Trash2 size={16} />}
                       tooltip="Delete vehicle"
+                      onClick={() => onDelete?.(vehicle)}
                     />
                   </div>
                 </td>

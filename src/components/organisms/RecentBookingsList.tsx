@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/cn";
 import { RecentBooking } from "@/types";
+import { ArrowRight } from "lucide-react";
 
 interface RecentBookingsListProps {
   bookings: RecentBooking[];
@@ -11,13 +12,23 @@ interface RecentBookingsListProps {
 export default function RecentBookingsList({
   bookings,
 }: RecentBookingsListProps) {
+  const displayedBookings = bookings.slice(0, 4);
+
   return (
     <div className="bg-white rounded-[var(--radius-xl)] border border-[var(--border)] p-6">
-      <h2 className="text-lg font-bold text-[var(--text-primary)] mb-5">
-        Recent Bookings
-      </h2>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-lg font-bold text-[var(--text-primary)]">
+          Recent Bookings
+        </h2>
+        <a
+          href="/id/dashboard/pricelist"
+          className="text-xs font-semibold text-[var(--primary)] hover:underline flex items-center gap-1"
+        >
+          View All <ArrowRight size={14} />
+        </a>
+      </div>
       <div className="space-y-0">
-        {bookings.map((booking) => (
+        {displayedBookings.map((booking) => (
           <div
             key={booking.id}
             className={cn(

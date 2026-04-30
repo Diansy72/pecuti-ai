@@ -9,6 +9,8 @@ import {
   HeroContent,
   EmailBroadcast,
   Customer,
+  Tourist,
+  GoogleReview,
 } from "@/types";
 
 export const mockVehicles: Vehicle[] = [
@@ -450,4 +452,44 @@ export const mockPackages: TourPackage[] = [
     destinationTags: ["Malioboro", "Taman Sari", "Alun-alun"],
     status: "draft",
   }
+];
+
+export const mockTourists: Tourist[] = [
+  { id: "t-001", nationality: "Japan 🇯🇵", continent: "Asia", packageTaken: "Bali Explorer" },
+  { id: "t-002", nationality: "Germany 🇩🇪", continent: "Europe", packageTaken: "Komodo Trip" },
+  { id: "t-003", nationality: "USA 🇺🇸", continent: "Americas", packageTaken: "Raja Ampat Dive" },
+  { id: "t-004", nationality: "South Korea 🇰🇷", continent: "Asia", packageTaken: "Jogja Heritage" },
+  { id: "t-005", nationality: "France 🇫🇷", continent: "Europe", packageTaken: "Bali Explorer" },
+  { id: "t-006", nationality: "Brazil 🇧🇷", continent: "Americas", packageTaken: "City Tour Jogja" },
+];
+
+export const mockGoogleReviews: GoogleReview[] = [
+  {
+    id: "r-001",
+    name: "Sarah Johnson",
+    country: "USA 🇺🇸",
+    rating: 5,
+    comment: "Amazing experience! DriveNusa made our trip unforgettable.",
+  },
+  {
+    id: "r-002",
+    name: "Hiroshi Tanaka",
+    country: "Japan 🇯🇵",
+    rating: 5,
+    comment: "Excellent service and very professional staff.",
+  },
+  {
+    id: "r-003",
+    name: "Maria Garcia",
+    country: "Spain 🇪🇸",
+    rating: 4,
+    comment: "Great tour packages with comfortable vehicles. Highly recommended!",
+  },
+  {
+    id: "r-004",
+    name: "Chen Wei",
+    country: "China 🇨🇳",
+    rating: 5,
+    comment: "Best car rental experience in Yogyakarta. Will come back again!",
+  },
 ];

@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Input from "@/components/atoms/Input";
+import Select from "@/components/atoms/Select";
+import Pagination from "@/components/molecules/Pagination";
 import DashboardLayout from "@/components/templates/DashboardLayout";
 import Button from "@/components/atoms/Button";
 import { cn } from "@/lib/cn";
@@ -18,6 +21,16 @@ import {
 } from "lucide-react";
 import { mockBroadcasts, mockCustomers } from "@/lib/data";
 import { EmailBroadcast } from "@/types";
+import ConfirmDialog from "@/components/organisms/ConfirmDialog";
+import DetailModal from "@/components/organisms/DetailModal";
+
+const customerFilterOptions = [
+  { value: "all", label: "Semua Pelanggan" },
+  { value: "active", label: "Active Booker (≥3)" },
+  { value: "new", label: "New Customer (<3)" },
+];
+
+const CUSTOMERS_PER_PAGE = 5;
 
 export default function PromoNotifManagement() {
   const [broadcasts, setBroadcasts] = useState<EmailBroadcast[]>(mockBroadcasts);
@@ -26,6 +39,59 @@ export default function PromoNotifManagement() {
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // History tab state
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
+  const [historyPage, setHistoryPage] = useState(1);
+
+  // Detail & Delete state
+  const [detailBroadcast, setDetailBroadcast] = useState<EmailBroadcast | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EmailBroadcast | null>(null);
+
+  // Customer tab state
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerFilter, setCustomerFilter] = useState("all");
+  const [customerPage, setCustomerPage] = useState(1);
+
+  const filteredCustomers = useMemo(() => {
+    return mockCustomers.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.email.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.phone.toLowerCase().includes(customerSearch.toLowerCase());
+      const matchesFilter =
+        customerFilter === "all" ||
+        (customerFilter === "active" && c.totalBookings >= 3) ||
+        (customerFilter === "new" && c.totalBookings < 3);
+      return matchesSearch && matchesFilter;
+    });
+  }, [customerSearch, customerFilter]);
+
+  const customerTotalPages = Math.ceil(filteredCustomers.length / CUSTOMERS_PER_PAGE);
+  const paginatedCustomers = filteredCustomers.slice(
+    (customerPage - 1) * CUSTOMERS_PER_PAGE,
+    customerPage * CUSTOMERS_PER_PAGE
+  );
+
+  // History filtering
+  const HISTORY_PER_PAGE = 5;
+  const filteredBroadcasts = useMemo(() => {
+    return broadcasts.filter((b) => {
+      const matchesSearch =
+        b.subject.toLowerCase().includes(historySearch.toLowerCase()) ||
+        b.body.toLowerCase().includes(historySearch.toLowerCase());
+      const matchesStatus =
+        historyStatusFilter === "all" || b.status === historyStatusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [broadcasts, historySearch, historyStatusFilter]);
+
+  const historyTotalPages = Math.ceil(filteredBroadcasts.length / HISTORY_PER_PAGE);
+  const paginatedBroadcasts = filteredBroadcasts.slice(
+    (historyPage - 1) * HISTORY_PER_PAGE,
+    historyPage * HISTORY_PER_PAGE
+  );
 
   const handleSend = () => {
     setShowConfirm(true);
@@ -193,160 +259,261 @@ export default function PromoNotifManagement() {
 
       {/* History Tab */}
       {activeTab === "history" && (
-        <div className="bg-white rounded-[var(--radius-xl)] border border-[var(--border)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  {["Subject", "Recipients", "Status", "Sent At", "Action"].map(
-                    (col) => (
-                      <th
-                        key={col}
-                        className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] bg-[var(--bg-main)]/50"
-                      >
-                        {col}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {broadcasts.map((broadcast, index) => (
-                  <tr
-                    key={broadcast.id}
-                    className={cn(
-                      "border-b border-[var(--border-light)] table-row-hover",
-                      index % 2 === 1 && "bg-[#FAFBFC]"
+        <>
+          {/* History Filters */}
+          <div className="bg-white rounded-t-[var(--radius-xl)] border border-b-0 border-[var(--border)] p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="w-full max-w-sm">
+                <Input
+                  hasSearchIcon
+                  placeholder="Cari email broadcast..."
+                  value={historySearch}
+                  onChange={(e) => {
+                    setHistorySearch(e.target.value);
+                    setHistoryPage(1);
+                  }}
+                />
+              </div>
+              <div className="w-48">
+                <Select
+                  options={[
+                    { value: "all", label: "Semua Status" },
+                    { value: "sent", label: "Sent" },
+                    { value: "draft", label: "Draft" },
+                    { value: "failed", label: "Failed" },
+                  ]}
+                  value={historyStatusFilter}
+                  onChange={(e) => {
+                    setHistoryStatusFilter(e.target.value);
+                    setHistoryPage(1);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-b-[var(--radius-xl)] border border-[var(--border)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--border)]">
+                    {["Subject", "Recipients", "Status", "Sent At", "Action"].map(
+                      (col) => (
+                        <th
+                          key={col}
+                          className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] bg-[var(--bg-main)]/50"
+                        >
+                          {col}
+                        </th>
+                      )
                     )}
-                  >
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-medium text-[var(--text-primary)]">
-                        {broadcast.subject}
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
-                        {broadcast.body}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
-                      {broadcast.recipientCount > 0
-                        ? `${broadcast.recipientCount} emails`
-                        : "-"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedBroadcasts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-12 text-center text-sm text-[var(--text-muted)]">
+                        Tidak ada data broadcast ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedBroadcasts.map((broadcast, index) => (
+                      <tr
+                        key={broadcast.id}
                         className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1 rounded-[var(--radius-full)] text-xs font-semibold",
-                          broadcast.status === "sent"
-                            ? "bg-[var(--status-available-bg)] text-green-700"
-                            : broadcast.status === "draft"
-                            ? "bg-[var(--status-service-bg)] text-amber-700"
-                            : "bg-[var(--status-booked-bg)] text-red-700"
+                          "border-b border-[var(--border-light)] table-row-hover",
+                          index % 2 === 1 && "bg-[#FAFBFC]"
                         )}
                       >
-                        {statusIcon(broadcast.status)}
-                        {broadcast.status.charAt(0).toUpperCase() +
-                          broadcast.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
-                      {broadcast.sentAt
-                        ? new Date(broadcast.sentAt).toLocaleDateString("id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-1">
-                        <button className="p-2 rounded-[var(--radius-md)] text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBroadcast(broadcast.id)}
-                          className="p-2 rounded-[var(--radius-md)] text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <td className="px-5 py-4">
+                          <p className="text-sm font-medium text-[var(--text-primary)]">
+                            {broadcast.subject}
+                          </p>
+                          <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
+                            {broadcast.body}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
+                          {broadcast.recipientCount > 0
+                            ? `${broadcast.recipientCount} emails`
+                            : "-"}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-[var(--radius-full)] text-xs font-semibold",
+                              broadcast.status === "sent"
+                                ? "bg-[var(--status-available-bg)] text-green-700"
+                                : broadcast.status === "draft"
+                                ? "bg-[var(--status-service-bg)] text-amber-700"
+                                : "bg-[var(--status-booked-bg)] text-red-700"
+                            )}
+                          >
+                            {statusIcon(broadcast.status)}
+                            {broadcast.status.charAt(0).toUpperCase() +
+                              broadcast.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
+                          {broadcast.sentAt
+                            ? new Date(broadcast.sentAt).toLocaleDateString("id-ID", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setDetailBroadcast(broadcast)}
+                              className="p-2 rounded-[var(--radius-md)] text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(broadcast)}
+                              className="p-2 rounded-[var(--radius-md)] text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          <Pagination
+            className="mt-4 px-5"
+            currentPage={historyPage}
+            totalPages={historyTotalPages || 1}
+            totalItems={filteredBroadcasts.length}
+            itemsPerPage={HISTORY_PER_PAGE}
+            onPageChange={setHistoryPage}
+          />
+        </>
       )}
 
       {/* Customers Tab */}
       {activeTab === "customers" && (
-        <div className="bg-white rounded-[var(--radius-xl)] border border-[var(--border)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  {["Name", "Email", "Phone", "Total Bookings", "Registered"].map(
-                    (col) => (
-                      <th
-                        key={col}
-                        className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] bg-[var(--bg-main)]/50"
-                      >
-                        {col}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {mockCustomers.map((customer, index) => (
-                  <tr
-                    key={customer.id}
-                    className={cn(
-                      "border-b border-[var(--border-light)] table-row-hover",
-                      index % 2 === 1 && "bg-[#FAFBFC]"
-                    )}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                          {customer.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)}
-                        </div>
-                        <span className="text-sm font-medium text-[var(--text-primary)]">
-                          {customer.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
-                      {customer.email}
-                    </td>
-                    <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
-                      {customer.phone}
-                    </td>
-                    <td className="px-5 py-4 text-sm font-medium text-[var(--text-primary)]">
-                      {customer.totalBookings}
-                    </td>
-                    <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
-                      {new Date(customer.registeredAt).toLocaleDateString(
-                        "id-ID",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Search & Filter */}
+          <div className="bg-white rounded-t-[var(--radius-xl)] border border-b-0 border-[var(--border)] p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="w-full max-w-sm">
+                <Input
+                  hasSearchIcon
+                  placeholder="Cari nama, email, atau telepon..."
+                  value={customerSearch}
+                  onChange={(e) => {
+                    setCustomerSearch(e.target.value);
+                    setCustomerPage(1);
+                  }}
+                />
+              </div>
+              <div className="w-56">
+                <Select
+                  options={customerFilterOptions}
+                  value={customerFilter}
+                  onChange={(e) => {
+                    setCustomerFilter(e.target.value);
+                    setCustomerPage(1);
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-b-[var(--radius-xl)] border border-[var(--border)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--border)]">
+                    {["Name", "Email", "Phone", "Total Bookings", "Registered"].map(
+                      (col) => (
+                        <th
+                          key={col}
+                          className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] bg-[var(--bg-main)]/50"
+                        >
+                          {col}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-12 text-center text-sm text-[var(--text-muted)]">
+                        Tidak ada pelanggan yang ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCustomers.map((customer, index) => (
+                      <tr
+                        key={customer.id}
+                        className={cn(
+                          "border-b border-[var(--border-light)] table-row-hover",
+                          index % 2 === 1 && "bg-[#FAFBFC]"
+                        )}
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {customer.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)}
+                            </div>
+                            <span className="text-sm font-medium text-[var(--text-primary)]">
+                              {customer.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
+                          {customer.email}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
+                          {customer.phone}
+                        </td>
+                        <td className="px-5 py-4 text-sm font-medium text-[var(--text-primary)]">
+                          {customer.totalBookings}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--text-secondary)]">
+                          {new Date(customer.registeredAt).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Pagination
+            className="mt-4 px-5"
+            currentPage={customerPage}
+            totalPages={customerTotalPages || 1}
+            totalItems={filteredCustomers.length}
+            itemsPerPage={CUSTOMERS_PER_PAGE}
+            onPageChange={setCustomerPage}
+          />
+        </>
       )}
 
       {/* Send Confirmation Modal */}
@@ -390,6 +557,31 @@ export default function PromoNotifManagement() {
           </div>
         </div>
       )}
+      {/* Broadcast Detail Modal */}
+      <DetailModal
+        isOpen={!!detailBroadcast}
+        onClose={() => setDetailBroadcast(null)}
+        title="Email Broadcast Detail"
+        items={detailBroadcast ? [
+          { label: "Subject", value: detailBroadcast.subject },
+          { label: "Status", value: detailBroadcast.status.charAt(0).toUpperCase() + detailBroadcast.status.slice(1) },
+          { label: "Recipients", value: detailBroadcast.recipientCount > 0 ? `${detailBroadcast.recipientCount} emails` : "-" },
+          { label: "Sent At", value: detailBroadcast.sentAt ? new Date(detailBroadcast.sentAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-" },
+          { label: "Message", value: detailBroadcast.body },
+        ] : []}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) handleDeleteBroadcast(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        title="Hapus Broadcast"
+        message={`Apakah Anda yakin ingin menghapus "${deleteTarget?.subject}"? Tindakan ini tidak dapat dibatalkan.`}
+      />
     </DashboardLayout>
   );
 }

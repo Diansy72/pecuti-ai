@@ -9,8 +9,13 @@ import TabGroup from "@/components/molecules/TabGroup";
 import Pagination from "@/components/molecules/Pagination";
 import VehicleTable from "@/components/organisms/VehicleTable";
 import VehicleTypeModal from "@/components/organisms/VehicleTypeModal";
+import DetailModal from "@/components/organisms/DetailModal";
+import ConfirmDialog from "@/components/organisms/ConfirmDialog";
+import CreateBookingModal from "@/components/organisms/CreateBookingModal";
 import { Plus } from "lucide-react";
-import { mockVehicles } from "@/lib/data";
+import { mockVehicles, formatCurrency } from "@/lib/data";
+import { Vehicle } from "@/types";
+import Badge from "@/components/atoms/Badge";
 
 const tabs = [
   { id: "vehicles", label: "Vehicles" },
@@ -27,14 +32,24 @@ const statusOptions = [
 const ITEMS_PER_PAGE = 5;
 
 export default function PricelistPage() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
   const [activeTab, setActiveTab] = useState("vehicles");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Detail modal
+  const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
+
+  // Delete confirm
+  const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
+
+  // Booking modal
+  const [bookingTarget, setBookingTarget] = useState<Vehicle | null>(null);
+
   const filteredVehicles = useMemo(() => {
-    return mockVehicles.filter((vehicle) => {
+    return vehicles.filter((vehicle) => {
       const matchesSearch =
         vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         vehicle.licensePlate.toLowerCase().includes(searchQuery.toLowerCase());
@@ -42,13 +57,32 @@ export default function PricelistPage() {
         statusFilter === "all" || vehicle.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [vehicles, searchQuery, statusFilter]);
 
   const totalPages = Math.ceil(filteredVehicles.length / ITEMS_PER_PAGE);
   const paginatedVehicles = filteredVehicles.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const handleDelete = (vehicle: Vehicle) => {
+    setDeleteTarget(vehicle);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      setVehicles((prev) => prev.filter((v) => v.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleBooking = (vehicleId: number) => {
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id === vehicleId ? { ...v, status: "rented" as const } : v
+      )
+    );
+  };
 
   return (
     <DashboardLayout
@@ -64,7 +98,7 @@ export default function PricelistPage() {
             Pricelist Management
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {mockVehicles.length} vehicles in fleet
+            {vehicles.length} vehicles in fleet
           </p>
         </div>
         <Button
@@ -113,7 +147,12 @@ export default function PricelistPage() {
           </div>
 
           {/* Table */}
-          <VehicleTable vehicles={paginatedVehicles} />
+          <VehicleTable
+            vehicles={paginatedVehicles}
+            onView={(v) => setDetailVehicle(v)}
+            onDelete={(v) => handleDelete(v)}
+            onBooking={(v) => setBookingTarget(v)}
+          />
 
           <Pagination
             className="mt-4 px-5"
@@ -141,6 +180,43 @@ export default function PricelistPage() {
         onSelect={(type) => {
           console.log("Selected vehicle type:", type);
           setIsModalOpen(false);
+        }}
+      />
+
+      {/* Vehicle Detail Modal */}
+      <DetailModal
+        isOpen={!!detailVehicle}
+        onClose={() => setDetailVehicle(null)}
+        title="Vehicle Detail"
+        items={detailVehicle ? [
+          { label: "ID", value: String(detailVehicle.id) },
+          { label: "Name", value: detailVehicle.name },
+          { label: "Type", value: detailVehicle.type === "car" ? "Car" : "Motorcycle" },
+          { label: "Plate Number", value: detailVehicle.licensePlate },
+          { label: "Category", value: detailVehicle.category },
+          { label: "Price / Day", value: formatCurrency(detailVehicle.pricePerDay) },
+          { label: "Status", value: <Badge status={detailVehicle.status === "rented" ? "booked" : detailVehicle.status} /> },
+          { label: "Created At", value: detailVehicle.createdAt },
+        ] : []}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Hapus Kendaraan"
+        message={`Apakah Anda yakin ingin menghapus ${deleteTarget?.name} (${deleteTarget?.licensePlate})? Tindakan ini tidak dapat dibatalkan.`}
+      />
+
+      {/* Create Booking Modal */}
+      <CreateBookingModal
+        isOpen={!!bookingTarget}
+        onClose={() => setBookingTarget(null)}
+        vehicle={bookingTarget}
+        onSubmit={(vehicleId) => {
+          handleBooking(vehicleId);
+          setBookingTarget(null);
         }}
       />
     </DashboardLayout>
